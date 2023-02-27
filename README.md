@@ -1,6 +1,6 @@
 <h1 align="center">Derecho: Privacy Pools with Proof-Carrying Disclosures</h1>
 
-This repository contains an implementation of *proof-carrying disclosures* as specified in the Derecho paper.
+This repository contains an implementation of *proof-carrying disclosures* as specified in the [Derecho paper](https://eprint.iacr.org/2023/273).
 
 This library is released under the MIT License and the Apache v2 License (see [License](#license)).
 
