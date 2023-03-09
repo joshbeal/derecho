@@ -165,7 +165,32 @@ fn test_verifiable_disclosure_pasta_r1cs_snark_pcd() {
     )
     .unwrap();
 
-    /* compute deposit record from amt, pk, in_cm, deposit_uid */
+    aux_state
+        .init(&pp.pp_mt.0, &pp.pp_mt.1, &pp.pp_mt.2)
+        .unwrap();
+    aux_state
+        .seed(
+            64u64,
+            init_amt,
+            init_pk,
+            init_r,
+            &pp.pp_mt.0,
+            &member_map,
+            &old_member_map,
+            &pp.pp_mt.1,
+            &deposit_map,
+            &old_deposit_map,
+            &pp.pp_mt.2,
+            &transfer_map,
+            &old_transfer_map,
+        )
+        .unwrap();
+
+    /* get current digest of membership declaration history accumulator */
+    let member_m = aux_state.tree_member_m.as_ref().unwrap();
+    let member_rh = SparseMT::<Fr, P, HG>::root(&pp.pp_mt.0, member_m).unwrap();
+
+    /* compute deposit record from amt, pk, in_cm, deposit_uid, member_rh */
     let deposit_uid = Fr::from_repr(BigInteger256::from(1789u64)).unwrap();
     let mut dep_amt_writer = Cursor::new(Vec::<u8>::new());
     init_amt.write(&mut dep_amt_writer).unwrap();
@@ -175,6 +200,8 @@ fn test_verifiable_disclosure_pasta_r1cs_snark_pcd() {
     in_cm.write(&mut dep_cm_writer).unwrap();
     let mut dep_uid_writer = Cursor::new(Vec::<u8>::new());
     deposit_uid.write(&mut dep_uid_writer).unwrap();
+    let mut member_rh_writer = Cursor::new(Vec::<u8>::new());
+    member_rh.write(&mut member_rh_writer).unwrap();
     let deposit_val = <<VC as VerifiableDisclosureConfig>::H as CRHforMerkleTree>::hash_bytes(
         &pp.pp_crh,
         &[
@@ -182,6 +209,7 @@ fn test_verifiable_disclosure_pasta_r1cs_snark_pcd() {
             dep_pk_writer.into_inner(),
             dep_cm_writer.into_inner(),
             dep_uid_writer.into_inner(),
+            member_rh_writer.into_inner(),
         ]
         .concat(),
     )
@@ -192,6 +220,7 @@ fn test_verifiable_disclosure_pasta_r1cs_snark_pcd() {
     old_deposit_map.insert(deposit_key, deposit_val);
     state.write_deposit(&deposit_key, &deposit_val).unwrap();
 
+    /* update state with the newly-calculated deposit record */
     aux_state
         .init(&pp.pp_mt.0, &pp.pp_mt.1, &pp.pp_mt.2)
         .unwrap();

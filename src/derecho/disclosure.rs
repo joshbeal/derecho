@@ -446,6 +446,9 @@ impl<VC: VerifiableDisclosureConfig> PCDPredicate<VC::F> for VerifiableDisclosur
         let deposit_uid_bytes_g = msg.acc_info_g.deposit_uid_g.to_bytes()?;
         deposit_rec_input_bytes_g.extend(deposit_uid_bytes_g);
 
+        let member_rh_bytes_g = msg.acc_info_g.member_rh_g.to_bytes()?;
+        deposit_rec_input_bytes_g.extend(member_rh_bytes_g);
+
         let deposit_rec_hash_g =
             VC::HG::hash_bytes(&self.pp_crh, &deposit_rec_input_bytes_g).unwrap();
         deposit_rec_hash_g.conditional_enforce_equal(&msg.acc_info_g.deposit_rec_g, base_bit)?;
