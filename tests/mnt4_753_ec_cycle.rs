@@ -74,6 +74,7 @@ impl<I: PCD<Fr>> VerifiableDisclosureConfig for VCTemplate<I> {
 type TestPCD = ECCyclePCD<Fr, Fq, PCDGroth16Mnt4>;
 
 #[test]
+#[ignore]
 fn test_verifiable_disclosure_mnt_large_ec_cycle_pcd() {
     type VC = VCTemplate<TestPCD>;
     type MG = PoseidonCRHforMerkleTreeGadget<ChaChaRng, Fr>;

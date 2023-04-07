@@ -268,14 +268,8 @@ impl<VC: VerifiableDisclosureConfig> AllocVar<PrivateTxInfo<VC>, VC::F> for Priv
 /// the public acc info in Derecho
 #[derive(CanonicalSerialize)]
 pub struct PublicAccInfo<VC: VerifiableDisclosureConfig> {
-    /// membership declaration
-    pub member_decl: <VC::H as CRHforMerkleTree>::Output,
     /// root hash of the membership declaration tree
     pub member_rh: <VC::MTMember as MT<VC::F, u64, UInt64<VC::F>>>::Digest,
-    /// deposit record
-    pub deposit_rec: <VC::H as CRHforMerkleTree>::Output,
-    /// deposit uid
-    pub deposit_uid: VC::F,
     /// root hash of the deposit record tree
     pub deposit_rh: <VC::MTDeposit as MT<VC::F, u64, UInt64<VC::F>>>::Digest,
     /// transfer record
@@ -288,16 +282,7 @@ impl<VC: VerifiableDisclosureConfig> Absorbable<VC::F> for PublicAccInfo<VC> {
     fn to_sponge_bytes(&self) -> Vec<u8> {
         let mut output = Vec::new();
         output.append(&mut Absorbable::<VC::F>::to_sponge_bytes(
-            &to_bytes!(self.member_decl).unwrap(),
-        ));
-        output.append(&mut Absorbable::<VC::F>::to_sponge_bytes(
             &to_bytes!(self.member_rh).unwrap(),
-        ));
-        output.append(&mut Absorbable::<VC::F>::to_sponge_bytes(
-            &to_bytes!(self.deposit_rec).unwrap(),
-        ));
-        output.append(&mut Absorbable::<VC::F>::to_sponge_bytes(
-            &to_bytes!(self.deposit_uid).unwrap(),
         ));
         output.append(&mut Absorbable::<VC::F>::to_sponge_bytes(
             &to_bytes!(self.deposit_rh).unwrap(),
@@ -314,16 +299,7 @@ impl<VC: VerifiableDisclosureConfig> Absorbable<VC::F> for PublicAccInfo<VC> {
     fn to_sponge_field_elements(&self) -> Vec<VC::F> {
         let mut output = Vec::new();
         output.append(&mut Absorbable::<VC::F>::to_sponge_field_elements(
-            &to_bytes!(self.member_decl).unwrap(),
-        ));
-        output.append(&mut Absorbable::<VC::F>::to_sponge_field_elements(
             &to_bytes!(self.member_rh).unwrap(),
-        ));
-        output.append(&mut Absorbable::<VC::F>::to_sponge_field_elements(
-            &to_bytes!(self.deposit_rec).unwrap(),
-        ));
-        output.append(&mut Absorbable::<VC::F>::to_sponge_field_elements(
-            &to_bytes!(self.deposit_uid).unwrap(),
         ));
         output.append(&mut Absorbable::<VC::F>::to_sponge_field_elements(
             &to_bytes!(self.deposit_rh).unwrap(),
@@ -340,10 +316,7 @@ impl<VC: VerifiableDisclosureConfig> Absorbable<VC::F> for PublicAccInfo<VC> {
 
 impl<VC: VerifiableDisclosureConfig> ToBytes for PublicAccInfo<VC> {
     fn write<W: Write>(&self, mut writer: W) -> IoResult<()> {
-        self.member_decl.write(&mut writer)?;
         self.member_rh.write(&mut writer)?;
-        self.deposit_rec.write(&mut writer)?;
-        self.deposit_uid.write(&mut writer)?;
         self.deposit_rh.write(&mut writer)?;
         self.transfer_rec.write(&mut writer)?;
         self.transfer_rh.write(&mut writer)?;
@@ -354,10 +327,7 @@ impl<VC: VerifiableDisclosureConfig> ToBytes for PublicAccInfo<VC> {
 impl<VC: VerifiableDisclosureConfig> Clone for PublicAccInfo<VC> {
     fn clone(&self) -> Self {
         PublicAccInfo {
-            member_decl: self.member_decl,
             member_rh: self.member_rh.clone(),
-            deposit_rec: self.deposit_rec,
-            deposit_uid: self.deposit_uid,
             deposit_rh: self.deposit_rh.clone(),
             transfer_rec: self.transfer_rec,
             transfer_rh: self.transfer_rh.clone(),
@@ -368,10 +338,7 @@ impl<VC: VerifiableDisclosureConfig> Clone for PublicAccInfo<VC> {
 impl<VC: VerifiableDisclosureConfig> Default for PublicAccInfo<VC> {
     fn default() -> Self {
         PublicAccInfo {
-            member_decl: <VC::H as CRHforMerkleTree>::Output::default(),
             member_rh: <VC::MTMember as MT<VC::F, u64, UInt64<VC::F>>>::Digest::default(),
-            deposit_rec: <VC::H as CRHforMerkleTree>::Output::default(),
-            deposit_uid: VC::F::default(),
             deposit_rh: <VC::MTDeposit as MT<VC::F, u64, UInt64<VC::F>>>::Digest::default(),
             transfer_rec: <VC::H as CRHforMerkleTree>::Output::default(),
             transfer_rh: <VC::MTTransfer as MT<VC::F, u64, UInt64<VC::F>>>::Digest::default(),
@@ -381,14 +348,8 @@ impl<VC: VerifiableDisclosureConfig> Default for PublicAccInfo<VC> {
 
 /// the public acc info gadget in Derecho
 pub struct PublicAccInfoVar<VC: VerifiableDisclosureConfig> {
-    /// membership declaration
-    pub member_decl_g: <VC::HG as CRHforMerkleTreeGadget<VC::H, VC::F>>::OutputVar,
     /// root hash of the membership declaration tree
     pub member_rh_g: <VC::MTMember as MT<VC::F, u64, UInt64<VC::F>>>::DigestVar,
-    /// deposit record
-    pub deposit_rec_g: <VC::HG as CRHforMerkleTreeGadget<VC::H, VC::F>>::OutputVar,
-    /// deposit uid
-    pub deposit_uid_g: FpVar<VC::F>,
     /// root hash of the deposit record tree
     pub deposit_rh_g: <VC::MTDeposit as MT<VC::F, u64, UInt64<VC::F>>>::DigestVar,
     /// transfer record
@@ -409,26 +370,9 @@ impl<VC: VerifiableDisclosureConfig> AllocVar<PublicAccInfo<VC>, VC::F> for Publ
         let t = f()?;
         let acc_info = t.borrow().clone();
 
-        let member_decl_g =
-            <VC::HG as CRHforMerkleTreeGadget<VC::H, VC::F>>::OutputVar::new_variable(
-                ark_relations::ns!(cs, "public_acc_info_gadget_member_decl"),
-                || Ok(acc_info.member_decl),
-                mode,
-            )?;
         let member_rh_g = <VC::MTMember as MT<VC::F, u64, UInt64<VC::F>>>::DigestVar::new_variable(
             ark_relations::ns!(cs, "public_acc_info_gadget_member_rh"),
             || Ok(&acc_info.member_rh),
-            mode,
-        )?;
-        let deposit_rec_g =
-            <VC::HG as CRHforMerkleTreeGadget<VC::H, VC::F>>::OutputVar::new_variable(
-                ark_relations::ns!(cs, "public_acc_info_gadget_deposit_rec"),
-                || Ok(acc_info.deposit_rec),
-                mode,
-            )?;
-        let deposit_uid_g = FpVar::<VC::F>::new_variable(
-            ark_relations::ns!(cs, "public_acc_info_gadget_deposit_uid"),
-            || Ok(&acc_info.deposit_uid),
             mode,
         )?;
         let deposit_rh_g =
@@ -450,10 +394,7 @@ impl<VC: VerifiableDisclosureConfig> AllocVar<PublicAccInfo<VC>, VC::F> for Publ
                 mode,
             )?;
         Ok(PublicAccInfoVar {
-            member_decl_g,
             member_rh_g,
-            deposit_rec_g,
-            deposit_uid_g,
             deposit_rh_g,
             transfer_rec_g,
             transfer_rh_g,
@@ -464,18 +405,12 @@ impl<VC: VerifiableDisclosureConfig> AllocVar<PublicAccInfo<VC>, VC::F> for Publ
 impl<VC: VerifiableDisclosureConfig> ToBytesGadget<VC::F> for PublicAccInfoVar<VC> {
     fn to_bytes(&self) -> Result<Vec<UInt8<VC::F>>, SynthesisError> {
         let mut res: Vec<UInt8<VC::F>> = Vec::new();
-        let member_decl_g_bytes = self.member_decl_g.to_bytes()?;
         let member_rh_g_bytes = self.member_rh_g.to_bytes()?;
-        let deposit_rec_g_bytes = self.deposit_rec_g.to_bytes()?;
-        let deposit_uid_g_bytes = self.deposit_uid_g.to_bytes()?;
         let deposit_rh_g_bytes = self.deposit_rh_g.to_bytes()?;
         let transfer_rec_g_bytes = self.transfer_rec_g.to_bytes()?;
         let transfer_rh_g_bytes = self.transfer_rh_g.to_bytes()?;
 
-        res.extend_from_slice(&member_decl_g_bytes);
         res.extend_from_slice(&member_rh_g_bytes);
-        res.extend_from_slice(&deposit_rec_g_bytes);
-        res.extend_from_slice(&deposit_uid_g_bytes);
         res.extend_from_slice(&deposit_rh_g_bytes);
         res.extend_from_slice(&transfer_rec_g_bytes);
         res.extend_from_slice(&transfer_rh_g_bytes);
@@ -487,10 +422,7 @@ impl<VC: VerifiableDisclosureConfig> ToBytesGadget<VC::F> for PublicAccInfoVar<V
 impl<VC: VerifiableDisclosureConfig> AbsorbableGadget<VC::F> for PublicAccInfoVar<VC> {
     fn to_sponge_field_elements(&self) -> Result<Vec<FpVar<VC::F>>, SynthesisError> {
         let mut output = Vec::new();
-        output.append(&mut (self.member_decl_g.to_bytes()?.to_sponge_field_elements()?));
         output.append(&mut (self.member_rh_g.to_bytes()?.to_sponge_field_elements()?));
-        output.append(&mut (self.deposit_rec_g.to_bytes()?.to_sponge_field_elements()?));
-        output.append(&mut (self.deposit_uid_g.to_bytes()?.to_sponge_field_elements()?));
         output.append(&mut (self.deposit_rh_g.to_bytes()?.to_sponge_field_elements()?));
         output.append(&mut (self.transfer_rec_g.to_bytes()?.to_sponge_field_elements()?));
         output.append(&mut (self.transfer_rh_g.to_bytes()?.to_sponge_field_elements()?));
@@ -501,6 +433,12 @@ impl<VC: VerifiableDisclosureConfig> AbsorbableGadget<VC::F> for PublicAccInfoVa
 /// the private acc info in Derecho
 #[derive(CanonicalSerialize)]
 pub struct PrivateAccInfo<VC: VerifiableDisclosureConfig> {
+    /// membership declaration
+    pub member_decl: <VC::H as CRHforMerkleTree>::Output,
+    /// deposit record
+    pub deposit_rec: <VC::H as CRHforMerkleTree>::Output,
+    /// deposit uid
+    pub deposit_uid: VC::F,
     /// membership witness (address) for the membership declaration tree
     pub member_addr: Vec<u64>,
     /// membership witness (path) for the membership declaration tree
@@ -530,6 +468,9 @@ pub struct PrivateAccInfo<VC: VerifiableDisclosureConfig> {
 impl<VC: VerifiableDisclosureConfig> Clone for PrivateAccInfo<VC> {
     fn clone(&self) -> Self {
         PrivateAccInfo {
+            member_decl: self.member_decl.clone(),
+            deposit_rec: self.deposit_rec.clone(),
+            deposit_uid: self.deposit_uid.clone(),
             member_addr: self.member_addr.clone(),
             deposit_addr: self.deposit_addr.clone(),
             transfer_addr: self.transfer_addr.clone(),
@@ -548,6 +489,9 @@ impl<VC: VerifiableDisclosureConfig> Clone for PrivateAccInfo<VC> {
 
 impl<VC: VerifiableDisclosureConfig> Default for PrivateAccInfo<VC> {
     fn default() -> Self {
+        let member_decl = <VC::H as CRHforMerkleTree>::Output::default();
+        let deposit_rec = <VC::H as CRHforMerkleTree>::Output::default();
+        let deposit_uid = VC::F::default();
         let member_addr = vec![0];
         let member_proof =
             <VC::MTMember as MT<VC::F, u64, UInt64<VC::F>>>::default_lookup_proof(1).unwrap();
@@ -567,6 +511,9 @@ impl<VC: VerifiableDisclosureConfig> Default for PrivateAccInfo<VC> {
         let transfer_history_proof =
             <VC::MTTransfer as MT<VC::F, u64, UInt64<VC::F>>>::default_lookup_proof(1).unwrap();
         PrivateAccInfo {
+            member_decl,
+            deposit_rec,
+            deposit_uid,
             member_addr,
             deposit_addr,
             transfer_addr,
@@ -585,6 +532,12 @@ impl<VC: VerifiableDisclosureConfig> Default for PrivateAccInfo<VC> {
 
 /// the private acc info gadget in Derecho
 pub struct PrivateAccInfoVar<VC: VerifiableDisclosureConfig> {
+    /// membership declaration
+    pub member_decl_g: <VC::HG as CRHforMerkleTreeGadget<VC::H, VC::F>>::OutputVar,
+    /// deposit record
+    pub deposit_rec_g: <VC::HG as CRHforMerkleTreeGadget<VC::H, VC::F>>::OutputVar,
+    /// deposit uid
+    pub deposit_uid_g: FpVar<VC::F>,
     /// membership witness (address) for the membership declaration tree
     pub member_addr_g: Vec<UInt64<VC::F>>,
     /// membership witness (path) for the membership declaration tree
@@ -626,6 +579,24 @@ impl<VC: VerifiableDisclosureConfig> AllocVar<PrivateAccInfo<VC>, VC::F> for Pri
         assert_eq!(acc_info.member_addr.len(), 1);
         assert_eq!(acc_info.deposit_addr.len(), 1);
         assert_eq!(acc_info.transfer_addr.len(), 1);
+
+        let member_decl_g =
+            <VC::HG as CRHforMerkleTreeGadget<VC::H, VC::F>>::OutputVar::new_variable(
+                ark_relations::ns!(cs, "private_acc_info_gadget_member_decl"),
+                || Ok(acc_info.member_decl),
+                mode,
+            )?;
+        let deposit_rec_g =
+            <VC::HG as CRHforMerkleTreeGadget<VC::H, VC::F>>::OutputVar::new_variable(
+                ark_relations::ns!(cs, "private_acc_info_gadget_deposit_rec"),
+                || Ok(acc_info.deposit_rec),
+                mode,
+            )?;
+        let deposit_uid_g = FpVar::<VC::F>::new_variable(
+            ark_relations::ns!(cs, "private_acc_info_gadget_deposit_uid"),
+            || Ok(&acc_info.deposit_uid),
+            mode,
+        )?;
 
         let member_addr_g = Vec::<UInt64<VC::F>>::new_variable(
             ark_relations::ns!(cs, "private_acc_info_gadget_member_addr"),
@@ -697,6 +668,9 @@ impl<VC: VerifiableDisclosureConfig> AllocVar<PrivateAccInfo<VC>, VC::F> for Pri
             )?;
 
         Ok(PrivateAccInfoVar {
+            member_decl_g,
+            deposit_rec_g,
+            deposit_uid_g,
             member_addr_g,
             member_proof_g,
             member_history_addr_g,

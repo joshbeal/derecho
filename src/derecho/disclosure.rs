@@ -271,10 +271,7 @@ impl<VC: VerifiableDisclosureConfig> VerifiableDisclosure<VC> {
         let deposit_h_addr = vec![aux_state.old_tree_deposit_history_addr];
         let transfer_h_addr = vec![aux_state.old_tree_transfer_history_addr];
         let public_acc_info_new = PublicAccInfo::<VC> {
-            member_decl: tfr.member_val,
             member_rh: rh_member_new_m,
-            deposit_rec: tfr.deposit_val,
-            deposit_uid: deposit_uid_new,
             deposit_rh: rh_deposit_new_m,
             transfer_rec: transfer_rec_new,
             transfer_rh: rh_transfer_new_m,
@@ -283,6 +280,9 @@ impl<VC: VerifiableDisclosureConfig> VerifiableDisclosure<VC> {
         let mem_addr_vec = vec![member_decl_key_new];
         let dep_addr_vec = vec![deposit_rec_key_new];
         let private_acc_info_new = PrivateAccInfo::<VC> {
+            member_decl: tfr.member_val,
+            deposit_rec: tfr.deposit_val,
+            deposit_uid: deposit_uid_new,
             member_addr: mem_addr_vec,
             member_proof: member_read_proof,
             member_history_addr: member_h_addr,
@@ -390,14 +390,14 @@ impl<VC: VerifiableDisclosureConfig> PCDPredicate<VC::F> for VerifiableDisclosur
         decl_input_bytes_g.extend(decl_input_pk_bytes_g);
 
         let decl_hash_g = VC::HG::hash_bytes(&self.pp_crh, &decl_input_bytes_g).unwrap();
-        decl_hash_g.conditional_enforce_equal(&msg.acc_info_g.member_decl_g, base_bit)?;
+        decl_hash_g.conditional_enforce_equal(&witness.acc_info_g.member_decl_g, base_bit)?;
         let constraints_from_step1a = cs.num_constraints() - pred_constraints - base_constraints;
         println!("constraints from membership declaration computation: {constraints_from_step1a}");
         pred_constraints += constraints_from_step1a;
 
         // 1b. Check the membership decl lookup proof in base case
         let pp_member_mt_state_g = self.pp_mt.0.clone();
-        let member_decl_g_vec = vec![msg.acc_info_g.member_decl_g.clone()];
+        let member_decl_g_vec = vec![witness.acc_info_g.member_decl_g.clone()];
         <VC::MTMember as MT<VC::F, u64, UInt64<VC::F>>>::conditionally_verify_lookup_gadget(
             ark_relations::ns!(cs, "member_read_proof").cs(),
             &pp_member_mt_state_g,
@@ -443,7 +443,7 @@ impl<VC: VerifiableDisclosureConfig> PCDPredicate<VC::F> for VerifiableDisclosur
         let cm_in_hash_bytes_g = cm_in_hash_g.to_bytes()?;
         deposit_rec_input_bytes_g.extend(cm_in_hash_bytes_g);
 
-        let deposit_uid_bytes_g = msg.acc_info_g.deposit_uid_g.to_bytes()?;
+        let deposit_uid_bytes_g = witness.acc_info_g.deposit_uid_g.to_bytes()?;
         deposit_rec_input_bytes_g.extend(deposit_uid_bytes_g);
 
         let member_rh_bytes_g = msg.acc_info_g.member_rh_g.to_bytes()?;
@@ -451,14 +451,14 @@ impl<VC: VerifiableDisclosureConfig> PCDPredicate<VC::F> for VerifiableDisclosur
 
         let deposit_rec_hash_g =
             VC::HG::hash_bytes(&self.pp_crh, &deposit_rec_input_bytes_g).unwrap();
-        deposit_rec_hash_g.conditional_enforce_equal(&msg.acc_info_g.deposit_rec_g, base_bit)?;
+        deposit_rec_hash_g.conditional_enforce_equal(&witness.acc_info_g.deposit_rec_g, base_bit)?;
         let constraints_from_step2a = cs.num_constraints() - pred_constraints - base_constraints;
         pred_constraints += constraints_from_step2a;
         println!("constraints from deposit record computation: {constraints_from_step2a}");
 
         // 2b. Check the deposit record lookup proof in base case
         let pp_deposit_mt_state_g = self.pp_mt.1.clone();
-        let deposit_rec_g_vec = vec![msg.acc_info_g.deposit_rec_g.clone()];
+        let deposit_rec_g_vec = vec![witness.acc_info_g.deposit_rec_g.clone()];
         <VC::MTDeposit as MT<VC::F, u64, UInt64<VC::F>>>::conditionally_verify_lookup_gadget(
             ark_relations::ns!(cs, "deposit_read_proof").cs(),
             &pp_deposit_mt_state_g,
