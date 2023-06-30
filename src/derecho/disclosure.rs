@@ -121,6 +121,7 @@ impl<VC: VerifiableDisclosureConfig> VerifiableDisclosure<VC> {
         let transfer_history_proof: <VC::MTTransfer as MT<VC::F, u64, UInt64<VC::F>>>::LookupProof;
         let member_decl_key_new;
         let deposit_rec_key_new;
+        let deposit_pk_new;
         let deposit_uid_new;
         let t_old = aux_state.t;
         let t_new = t_old + 2;
@@ -136,6 +137,7 @@ impl<VC: VerifiableDisclosureConfig> VerifiableDisclosure<VC> {
             println!("executing base case logic...");
             member_decl_key_new = tfr.member_key;
             deposit_rec_key_new = tfr.deposit_key;
+            deposit_pk_new = tfr.deposit_pk;
             deposit_uid_new = tfr.deposit_uid;
 
             member_read_proof = <VC::MTMember as MT<VC::F, u64, UInt64<VC::F>>>::lookup(
@@ -167,6 +169,7 @@ impl<VC: VerifiableDisclosureConfig> VerifiableDisclosure<VC> {
 
             member_decl_key_new = u64::default();
             deposit_rec_key_new = u64::default();
+            deposit_pk_new = VC::F::default();
             deposit_uid_new = VC::F::default();
             member_read_proof =
                 <VC::MTMember as MT<VC::F, u64, UInt64<VC::F>>>::default_lookup_proof(1)?;
@@ -282,6 +285,7 @@ impl<VC: VerifiableDisclosureConfig> VerifiableDisclosure<VC> {
         let private_acc_info_new = PrivateAccInfo::<VC> {
             member_decl: tfr.member_val,
             deposit_rec: tfr.deposit_val,
+            deposit_pk: deposit_pk_new,
             deposit_uid: deposit_uid_new,
             member_addr: mem_addr_vec,
             member_proof: member_read_proof,
@@ -386,7 +390,7 @@ impl<VC: VerifiableDisclosureConfig> PCDPredicate<VC::F> for VerifiableDisclosur
 
         // 1a. Check the membership decl computation in base case
         let mut decl_input_bytes_g = allowlist_id_g.to_bytes()?;
-        let decl_input_pk_bytes_g = witness.tx_info_g.in_pk_g.to_bytes()?;
+        let decl_input_pk_bytes_g = witness.acc_info_g.deposit_pk_g.to_bytes()?;
         decl_input_bytes_g.extend(decl_input_pk_bytes_g);
 
         let decl_hash_g = VC::HG::hash_bytes(&self.pp_crh, &decl_input_bytes_g).unwrap();
@@ -431,8 +435,8 @@ impl<VC: VerifiableDisclosureConfig> PCDPredicate<VC::F> for VerifiableDisclosur
         // 2a. Check the deposit record computation in base case
         let mut deposit_rec_input_bytes_g = witness.tx_info_g.in_amt_g.to_bytes()?;
 
-        let in_pk_bytes_g = witness.tx_info_g.in_pk_g.to_bytes()?;
-        deposit_rec_input_bytes_g.extend(in_pk_bytes_g);
+        let deposit_pk_bytes_g = witness.acc_info_g.deposit_pk_g.to_bytes()?;
+        deposit_rec_input_bytes_g.extend(deposit_pk_bytes_g);
 
         let mut cm_in_bytes_g = witness.tx_info_g.in_amt_g.to_bytes()?;
         let cm_in_pk_bytes_g = witness.tx_info_g.in_pk_g.to_bytes()?;
@@ -451,7 +455,8 @@ impl<VC: VerifiableDisclosureConfig> PCDPredicate<VC::F> for VerifiableDisclosur
 
         let deposit_rec_hash_g =
             VC::HG::hash_bytes(&self.pp_crh, &deposit_rec_input_bytes_g).unwrap();
-        deposit_rec_hash_g.conditional_enforce_equal(&witness.acc_info_g.deposit_rec_g, base_bit)?;
+        deposit_rec_hash_g
+            .conditional_enforce_equal(&witness.acc_info_g.deposit_rec_g, base_bit)?;
         let constraints_from_step2a = cs.num_constraints() - pred_constraints - base_constraints;
         pred_constraints += constraints_from_step2a;
         println!("constraints from deposit record computation: {constraints_from_step2a}");

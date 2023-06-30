@@ -130,15 +130,16 @@ fn test_verifiable_disclosure_pasta_r1cs_snark_pcd() {
     let init_amt = Fr::from_repr(BigInteger256::from(1021u64)).unwrap();
     let init_pk = Fr::from_repr(BigInteger256::from(1000u64)).unwrap();
     let init_r = Fr::from_repr(BigInteger256::from(1006u64)).unwrap();
+    let deposit_pk = Fr::from_repr(BigInteger256::from(1776u64)).unwrap();
 
-    /* compute member decl from allowlist id and init_pk */
+    /* compute member decl from allowlist id and deposit_pk */
     let mut al_id_writer = Cursor::new(Vec::<u8>::new());
     al_id.write(&mut al_id_writer).unwrap();
-    let mut init_pk_writer = Cursor::new(Vec::<u8>::new());
-    init_pk.write(&mut init_pk_writer).unwrap();
+    let mut deposit_pk_writer = Cursor::new(Vec::<u8>::new());
+    deposit_pk.write(&mut deposit_pk_writer).unwrap();
     let member_val = <<VC as VerifiableDisclosureConfig>::H as CRHforMerkleTree>::hash_bytes(
         &pp.pp_crh,
-        &[al_id_writer.into_inner(), init_pk_writer.into_inner()].concat(),
+        &[al_id_writer.into_inner(), deposit_pk_writer.into_inner()].concat(),
     )
     .unwrap();
 
@@ -190,12 +191,12 @@ fn test_verifiable_disclosure_pasta_r1cs_snark_pcd() {
     let member_m = aux_state.tree_member_m.as_ref().unwrap();
     let member_rh = SparseMT::<Fr, P, HG>::root(&pp.pp_mt.0, member_m).unwrap();
 
-    /* compute deposit record from amt, pk, in_cm, deposit_uid, member_rh */
+    /* compute deposit record from amt, deposit_pk, in_cm, deposit_uid, member_rh */
     let deposit_uid = Fr::from_repr(BigInteger256::from(1789u64)).unwrap();
     let mut dep_amt_writer = Cursor::new(Vec::<u8>::new());
     init_amt.write(&mut dep_amt_writer).unwrap();
     let mut dep_pk_writer = Cursor::new(Vec::<u8>::new());
-    init_pk.write(&mut dep_pk_writer).unwrap();
+    deposit_pk.write(&mut dep_pk_writer).unwrap();
     let mut dep_cm_writer = Cursor::new(Vec::<u8>::new());
     in_cm.write(&mut dep_cm_writer).unwrap();
     let mut dep_uid_writer = Cursor::new(Vec::<u8>::new());
@@ -267,6 +268,7 @@ fn test_verifiable_disclosure_pasta_r1cs_snark_pcd() {
         member_val,
         deposit_key,
         deposit_val,
+        deposit_pk,
         deposit_uid,
         base_case: true,
     };
@@ -365,6 +367,7 @@ fn test_verifiable_disclosure_pasta_r1cs_snark_pcd() {
         member_val,
         deposit_key,
         deposit_val,
+        deposit_pk,
         deposit_uid,
         base_case: false,
     };

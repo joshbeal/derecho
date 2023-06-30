@@ -20,6 +20,8 @@ pub struct ExampleTransfer<VC: VerifiableDisclosureConfig> {
     pub deposit_key: u64,
     /// deposit rec value
     pub deposit_val: <VC::H as CRHforMerkleTree>::Output,
+    /// deposit pk
+    pub deposit_pk: VC::F,
     /// deposit uid
     pub deposit_uid: VC::F,
     /// base case indicator

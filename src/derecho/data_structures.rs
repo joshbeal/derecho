@@ -437,6 +437,8 @@ pub struct PrivateAccInfo<VC: VerifiableDisclosureConfig> {
     pub member_decl: <VC::H as CRHforMerkleTree>::Output,
     /// deposit record
     pub deposit_rec: <VC::H as CRHforMerkleTree>::Output,
+    /// deposit pk
+    pub deposit_pk: VC::F,
     /// deposit uid
     pub deposit_uid: VC::F,
     /// membership witness (address) for the membership declaration tree
@@ -470,6 +472,7 @@ impl<VC: VerifiableDisclosureConfig> Clone for PrivateAccInfo<VC> {
         PrivateAccInfo {
             member_decl: self.member_decl.clone(),
             deposit_rec: self.deposit_rec.clone(),
+            deposit_pk: self.deposit_pk.clone(),
             deposit_uid: self.deposit_uid.clone(),
             member_addr: self.member_addr.clone(),
             deposit_addr: self.deposit_addr.clone(),
@@ -491,6 +494,7 @@ impl<VC: VerifiableDisclosureConfig> Default for PrivateAccInfo<VC> {
     fn default() -> Self {
         let member_decl = <VC::H as CRHforMerkleTree>::Output::default();
         let deposit_rec = <VC::H as CRHforMerkleTree>::Output::default();
+        let deposit_pk = VC::F::default();
         let deposit_uid = VC::F::default();
         let member_addr = vec![0];
         let member_proof =
@@ -513,6 +517,7 @@ impl<VC: VerifiableDisclosureConfig> Default for PrivateAccInfo<VC> {
         PrivateAccInfo {
             member_decl,
             deposit_rec,
+            deposit_pk,
             deposit_uid,
             member_addr,
             deposit_addr,
@@ -536,6 +541,8 @@ pub struct PrivateAccInfoVar<VC: VerifiableDisclosureConfig> {
     pub member_decl_g: <VC::HG as CRHforMerkleTreeGadget<VC::H, VC::F>>::OutputVar,
     /// deposit record
     pub deposit_rec_g: <VC::HG as CRHforMerkleTreeGadget<VC::H, VC::F>>::OutputVar,
+    /// deposit pk
+    pub deposit_pk_g: FpVar<VC::F>,
     /// deposit uid
     pub deposit_uid_g: FpVar<VC::F>,
     /// membership witness (address) for the membership declaration tree
@@ -592,6 +599,11 @@ impl<VC: VerifiableDisclosureConfig> AllocVar<PrivateAccInfo<VC>, VC::F> for Pri
                 || Ok(acc_info.deposit_rec),
                 mode,
             )?;
+        let deposit_pk_g = FpVar::<VC::F>::new_variable(
+            ark_relations::ns!(cs, "private_acc_info_gadget_deposit_pk"),
+            || Ok(&acc_info.deposit_pk),
+            mode,
+        )?;
         let deposit_uid_g = FpVar::<VC::F>::new_variable(
             ark_relations::ns!(cs, "private_acc_info_gadget_deposit_uid"),
             || Ok(&acc_info.deposit_uid),
@@ -670,6 +682,7 @@ impl<VC: VerifiableDisclosureConfig> AllocVar<PrivateAccInfo<VC>, VC::F> for Pri
         Ok(PrivateAccInfoVar {
             member_decl_g,
             deposit_rec_g,
+            deposit_pk_g,
             deposit_uid_g,
             member_addr_g,
             member_proof_g,
