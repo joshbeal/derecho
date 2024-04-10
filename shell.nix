@@ -12,7 +12,7 @@ nixpkgs = import (builtins.fetchTarball https://github.com/NixOS/nixpkgs/archive
 
 frameworks = nixpkgs.darwin.apple_sdk.frameworks;
 rust =
-  nixpkgs.rust-bin.nightly.latest.default.override {
+  nixpkgs.rust-bin.nightly."2023-02-12".default.override {
     extensions = [
       "rust-src"
     ];
